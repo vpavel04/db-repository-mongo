@@ -27,4 +27,11 @@ export class MongoDBQueryBuilder implements IQueryBuilder {
             }
         }
     }
+    byProperties(dict: any): IQuery {
+        return {
+            build: (): any => {
+                return dict;
+            }
+        }
+    }
 }

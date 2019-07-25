@@ -27,6 +27,13 @@ class MongoDBQueryBuilder {
             }
         };
     }
+    byProperties(dict) {
+        return {
+            build: () => {
+                return dict;
+            }
+        };
+    }
 }
 exports.MongoDBQueryBuilder = MongoDBQueryBuilder;
 //# sourceMappingURL=MongoDBQueryBuilder.js.map
