@@ -1,6 +1,6 @@
 {
   "name": "db-repository-mongo",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "description": "mongoDb implementation for db-repository",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,6 +27,6 @@
   },
   "dependencies": {
     "mongodb": "^3.1.10",
-    "db-repository": "^1.0.2"
+    "db-repository": "^1.1.1"
   }
 }

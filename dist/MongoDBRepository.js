@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const db_repository_1 = require("db-repository");
 const mongodb_1 = require("mongodb");
 const url = process.env.MONGODB_PATH || 'mongodb://localhost:27017/test';
 class MongoDBRepository {
@@ -8,7 +9,7 @@ class MongoDBRepository {
     }
     add(obj) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, (err1, client) => {
+            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
@@ -20,7 +21,7 @@ class MongoDBRepository {
                         }
                         else {
                             client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
-                                obj._id = obj._id.toHexString();
+                                obj._id = new db_repository_1.DbObjectId(obj._id.toHexString());
                                 client.close();
                                 if (err3) {
                                     reject(err3);
@@ -37,40 +38,27 @@ class MongoDBRepository {
     }
     remove(filter) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, (err1, client) => {
+            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
                 else {
-                    if (filter.build() === null) {
-                        client.db().collection(this.getTableName()).deleteMany(null, (err2, result) => {
-                            client.close();
-                            if (err2) {
-                                reject(err2);
-                            }
-                            else {
-                                fulfill(result.deletedCount);
-                            }
-                        });
-                    }
-                    else {
-                        client.db().collection(this.getTableName()).deleteOne(filter.build(), (err2, result) => {
-                            client.close();
-                            if (err2) {
-                                reject(err2);
-                            }
-                            else {
-                                fulfill(result.deletedCount);
-                            }
-                        });
-                    }
+                    client.db().collection(this.getTableName()).deleteMany(filter.build(), (err2, result) => {
+                        client.close();
+                        if (err2) {
+                            reject(err2);
+                        }
+                        else {
+                            fulfill(result.deletedCount);
+                        }
+                    });
                 }
             });
         });
     }
     list(filter) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, (err1, client) => {
+            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
@@ -82,7 +70,7 @@ class MongoDBRepository {
                         }
                         else {
                             result.forEach(obj => {
-                                obj._id = obj._id.toHexString();
+                                obj._id = new db_repository_1.DbObjectId(obj._id.toHexString());
                             });
                             fulfill(result);
                         }
@@ -93,12 +81,12 @@ class MongoDBRepository {
     }
     update(obj) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, (err1, client) => {
+            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
                 else {
-                    const query = { _id: new mongodb_1.ObjectID(obj._id) };
+                    const query = { _id: new mongodb_1.ObjectID(obj._id.value) };
                     const update = {
                         $set: Object.assign({}, obj)
                     };
