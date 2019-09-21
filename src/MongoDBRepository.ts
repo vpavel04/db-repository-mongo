@@ -4,31 +4,31 @@
 
 import { DbObjectId, IDbObject, IRepository, IQuery } from 'db-repository';
 import { Collection, Db, MongoCallback, MongoClient, ObjectID } from 'mongodb';
-
-const url: string = process.env.MONGODB_PATH || 'mongodb://localhost:27017/test';
+import { replaceRepoIdsWithMongoIds, replaceMongoIdsWithRepoIds } from './IdConversion';
 
 export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
 
     private tableName: string;
-
+    private url: string;
     public constructor(className: string) {
         this.tableName = className;
+        this.url = process.env.MONGODB_PATH;
     }
 
     public add(obj: T): Promise<void> {
         return new Promise((fulfill: any, reject: any) => {
-            MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 } else {
-                    this.createCollection(obj, client, (err2, res1) => {
+                    this.createCollection(client, (err2, res1) => {
                         if (err2) {
                             client.close();
                             reject(err2);
                         } else {
+                            replaceRepoIdsWithMongoIds(obj);
                             client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
-                                obj._id = new DbObjectId((<any>obj)._id.toHexString());
-
+                                replaceMongoIdsWithRepoIds(obj);
                                 client.close();
                                 if (err3) {
                                     reject(err3);
@@ -45,7 +45,7 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
 
     public remove(filter: IQuery): Promise<number> {
         return new Promise((fulfill, reject) => {
-            MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 } else {
@@ -65,7 +65,7 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
 
     public list(filter: IQuery): Promise<T[]> {
         return new Promise((fulfill, reject) => {
-            MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 } else {
@@ -76,7 +76,7 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
                             reject(err2);
                         } else {
                             result.forEach(obj => {
-                                obj._id = new DbObjectId((<any>obj)._id.toHexString());
+                                replaceMongoIdsWithRepoIds(obj);
                             });
                             fulfill(result);
                         }
@@ -88,15 +88,18 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
 
     public update(obj: T): Promise<number> {
         return new Promise((fulfill, reject) => {
-            MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 } else {
                     const query = { _id: new ObjectID(obj._id.value) };
+
+                    replaceRepoIdsWithMongoIds(obj);
                     const update = {
                         $set: Object.assign({}, obj)
                     }
                     delete update.$set._id;
+                    replaceMongoIdsWithRepoIds(obj);
                     client.db().collection(this.getTableName()).updateOne(query, update, (err2, ret) => {
                         client.close();
                         if (err2) {
@@ -113,7 +116,7 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
     private getTableName(): string {
         return this.tableName;
     }
-    private createCollection(obj: T, client: MongoClient, callback: MongoCallback<Collection>): void {
+    private createCollection(client: MongoClient, callback: MongoCallback<Collection>): void {
         client.db().createCollection(this.getTableName(), (err, res) => {
             callback(err, res);
         });

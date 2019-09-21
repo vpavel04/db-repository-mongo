@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_repository_1 = require("db-repository");
 const mongodb_1 = require("mongodb");
+const IdConversion_1 = require("./IdConversion");
 class MongoDBQueryBuilder {
     all() {
         return {
@@ -41,26 +42,10 @@ class MongoDBQueryBuilder {
     byProperties(dict) {
         return {
             build: () => {
-                this.updateIdsToMongo(dict);
+                IdConversion_1.replaceRepoIdsWithMongoIds(dict);
                 return dict;
             }
         };
-    }
-    updateIdsToMongo(dict) {
-        if (!dict ||
-            typeof (dict) === 'string' || dict instanceof String ||
-            typeof (dict) === 'number' || dict instanceof Number ||
-            typeof (dict) === 'boolean' || dict instanceof Boolean)
-            return;
-        for (const key in dict) {
-            if (dict.hasOwnProperty(key)) {
-                const val = dict[key];
-                if (val instanceof db_repository_1.DbObjectId) {
-                    dict[key] = new mongodb_1.ObjectID(val.value);
-                }
-                this.updateIdsToMongo(val);
-            }
-        }
     }
 }
 exports.MongoDBQueryBuilder = MongoDBQueryBuilder;

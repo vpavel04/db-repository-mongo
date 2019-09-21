@@ -1,5 +1,6 @@
 import { DbObjectId, IQuery, IQueryBuilder } from 'db-repository';
 import { ObjectID } from 'mongodb';
+import { replaceRepoIdsWithMongoIds } from './IdConversion';
 
 export class MongoDBQueryBuilder implements IQueryBuilder {
     all(): IQuery {
@@ -41,26 +42,8 @@ export class MongoDBQueryBuilder implements IQueryBuilder {
     byProperties(dict: any): IQuery {
         return {
             build: (): any => {
-                this.updateIdsToMongo(dict);
+                replaceRepoIdsWithMongoIds(dict);
                 return dict;
-            }
-        }
-    }
-
-    private updateIdsToMongo(dict: any) {
-        if (!dict ||
-            typeof (dict) === 'string' || dict instanceof String ||
-            typeof (dict) === 'number' || dict instanceof Number ||
-            typeof (dict) === 'boolean' || dict instanceof Boolean)
-            return;
-
-        for (const key in dict) {
-            if (dict.hasOwnProperty(key)) {
-                const val = dict[key];
-                if (val instanceof DbObjectId) {
-                    dict[key] = new ObjectID(val.value);
-                }
-                this.updateIdsToMongo(val);
             }
         }
     }

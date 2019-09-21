@@ -4,5 +4,4 @@ export declare class MongoDBQueryBuilder implements IQueryBuilder {
     byId(id: string | DbObjectId): IQuery;
     byProperty(propName: string, propVal: string | number | boolean | Date | DbObjectId): IQuery;
     byProperties(dict: any): IQuery;
-    private updateIdsToMongo;
 }

@@ -1,27 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const db_repository_1 = require("db-repository");
 const mongodb_1 = require("mongodb");
-const url = process.env.MONGODB_PATH || 'mongodb://localhost:27017/test';
+const IdConversion_1 = require("./IdConversion");
 class MongoDBRepository {
     constructor(className) {
         this.tableName = className;
+        this.url = process.env.MONGODB_PATH;
     }
     add(obj) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            mongodb_1.MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
                 else {
-                    this.createCollection(obj, client, (err2, res1) => {
+                    this.createCollection(client, (err2, res1) => {
                         if (err2) {
                             client.close();
                             reject(err2);
                         }
                         else {
+                            IdConversion_1.replaceRepoIdsWithMongoIds(obj);
                             client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
-                                obj._id = new db_repository_1.DbObjectId(obj._id.toHexString());
+                                IdConversion_1.replaceMongoIdsWithRepoIds(obj);
                                 client.close();
                                 if (err3) {
                                     reject(err3);
@@ -38,7 +39,7 @@ class MongoDBRepository {
     }
     remove(filter) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            mongodb_1.MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
@@ -58,7 +59,7 @@ class MongoDBRepository {
     }
     list(filter) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            mongodb_1.MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
@@ -70,7 +71,7 @@ class MongoDBRepository {
                         }
                         else {
                             result.forEach(obj => {
-                                obj._id = new db_repository_1.DbObjectId(obj._id.toHexString());
+                                IdConversion_1.replaceMongoIdsWithRepoIds(obj);
                             });
                             fulfill(result);
                         }
@@ -81,16 +82,18 @@ class MongoDBRepository {
     }
     update(obj) {
         return new Promise((fulfill, reject) => {
-            mongodb_1.MongoClient.connect(url, { useNewUrlParser: true }, (err1, client) => {
+            mongodb_1.MongoClient.connect(this.url, { useNewUrlParser: true }, (err1, client) => {
                 if (err1) {
                     reject(err1);
                 }
                 else {
                     const query = { _id: new mongodb_1.ObjectID(obj._id.value) };
+                    IdConversion_1.replaceRepoIdsWithMongoIds(obj);
                     const update = {
                         $set: Object.assign({}, obj)
                     };
                     delete update.$set._id;
+                    IdConversion_1.replaceMongoIdsWithRepoIds(obj);
                     client.db().collection(this.getTableName()).updateOne(query, update, (err2, ret) => {
                         client.close();
                         if (err2) {
@@ -107,7 +110,7 @@ class MongoDBRepository {
     getTableName() {
         return this.tableName;
     }
-    createCollection(obj, client, callback) {
+    createCollection(client, callback) {
         client.db().createCollection(this.getTableName(), (err, res) => {
             callback(err, res);
         });
