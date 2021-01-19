@@ -21,21 +21,14 @@ export class MongoDBRepository<T extends IDbObject> implements IRepository<T> {
                 if (err1) {
                     reject(err1);
                 } else {
-                    this.createCollection(client, (err2, res1) => {
-                        if (err2) {
-                            client.close();
-                            reject(err2);
+                    replaceRepoIdsWithMongoIds(obj);
+                    client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
+                        replaceMongoIdsWithRepoIds(obj);
+                        client.close();
+                        if (err3) {
+                            reject(err3);
                         } else {
-                            replaceRepoIdsWithMongoIds(obj);
-                            client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
-                                replaceMongoIdsWithRepoIds(obj);
-                                client.close();
-                                if (err3) {
-                                    reject(err3);
-                                } else {
-                                    fulfill();
-                                }
-                            });
+                            fulfill();
                         }
                     });
                 }

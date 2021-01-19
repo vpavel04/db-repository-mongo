@@ -14,23 +14,15 @@ class MongoDBRepository {
                     reject(err1);
                 }
                 else {
-                    this.createCollection(client, (err2, res1) => {
-                        if (err2) {
-                            client.close();
-                            reject(err2);
+                    IdConversion_1.replaceRepoIdsWithMongoIds(obj);
+                    client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
+                        IdConversion_1.replaceMongoIdsWithRepoIds(obj);
+                        client.close();
+                        if (err3) {
+                            reject(err3);
                         }
                         else {
-                            IdConversion_1.replaceRepoIdsWithMongoIds(obj);
-                            client.db().collection(this.getTableName()).insertOne(obj, (err3, res2) => {
-                                IdConversion_1.replaceMongoIdsWithRepoIds(obj);
-                                client.close();
-                                if (err3) {
-                                    reject(err3);
-                                }
-                                else {
-                                    fulfill();
-                                }
-                            });
+                            fulfill();
                         }
                     });
                 }
